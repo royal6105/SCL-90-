@@ -45,8 +45,8 @@
        border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-width:46px;font-size:11px;color:var(--sub);background:#fafcff}
   .q .opts input{display:none}
   .q .opts label span{font-size:15px;font-weight:700;color:var(--ink);margin-top:2px}
-  .q .opts input:checked + label{background:var(--brand);border-color:var(--brand);color:#fff}
-  .q .opts input:checked + label span{color:#fff}
+  .q .opts label:has(input:checked){background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 6px rgba(14,165,233,.35)}
+  .q .opts label:has(input:checked) span{color:#fff}
   .actions{display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap}
   .btn{border:none;border-radius:10px;padding:13px 24px;font-size:15px;font-weight:600;cursor:pointer}
   .btn-primary{background:var(--brand);color:#fff}
