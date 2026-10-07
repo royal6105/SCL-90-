@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCL-90 症状自评量表 · 在线测评</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#eaf4f2; --card:#ffffff; --ink:#1f2937; --sub:#64748b;
+    --line:#e2e8f0; --brand:#0ea5e9; --brand-soft:#e0f2fe; --brand-ink:#0369a1;
+    --ok:#10b981; --warn:#f59e0b; --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.6;}
+  header{background:linear-gradient(135deg,#0891b2,#10b981);color:#fff;padding:28px 20px;text-align:center;}
+  header h1{margin:0 0 6px;font-size:24px;letter-spacing:1px}
+  header p{margin:2px 0;opacity:.94;font-size:13px}
+  .wrap{max-width:920px;margin:0 auto;padding:18px 16px 60px}
+  .disclaimer{background:#fffbeb;border:1px solid #fde68a;color:#92400e;
+       font-size:12.5px;padding:12px 14px;border-radius:10px;margin:16px 0}
+  .info-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .info-card h2{margin:0 0 10px;font-size:15px;color:var(--brand-ink)}
+  .fields{display:flex;gap:14px;flex-wrap:wrap}
+  .fields label{flex:1;min-width:150px;font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:5px}
+  .fields input,.fields select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px;color:var(--ink);background:#fafcff}
+  .fields input:focus,.fields select:focus{outline:none;border-color:var(--brand)}
+  .progress{position:sticky;top:0;background:var(--card);border:1px solid var(--line);
+       border-radius:12px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;z-index:5}
+  .progress .bar{flex:1;height:10px;background:#e8eef0;border-radius:99px;overflow:hidden}
+  .progress .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .25s}
+  .progress b{font-size:13px;color:var(--sub);white-space:nowrap}
+  .group{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:18px;overflow:hidden}
+  .group > h2{margin:0;padding:13px 16px;background:var(--brand-soft);color:var(--brand-ink);font-size:15px;
+       display:flex;justify-content:space-between;align-items:center}
+  .group > h2 small{font-weight:400;color:var(--sub);font-size:12px}
+  .q{display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-top:1px solid var(--line)}
+  .q:first-of-type{border-top:none}
+  .q .no{flex:0 0 30px;font-weight:700;color:var(--brand);font-size:14px;padding-top:6px}
+  .q .txt{flex:1;font-size:14px;padding-top:5px}
+  .q .opts{flex:0 0 auto;display:flex;gap:4px}
+  .q .opts label{display:flex;flex-direction:column;align-items:center;cursor:pointer;
+       border:1px solid var(--line);border-radius:8px;padding:5px 7px;min-width:46px;font-size:11px;color:var(--sub);background:#fafcff}
+  .q .opts input{display:none}
+  .q .opts label span{font-size:15px;font-weight:700;color:var(--ink);margin-top:2px}
+  .q .opts input:checked + label{background:var(--brand);border-color:var(--brand);color:#fff}
+  .q .opts input:checked + label span{color:#fff}
+  .actions{display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+  .btn{border:none;border-radius:10px;padding:13px 24px;font-size:15px;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .btn:hover{opacity:.92}
+  /* report */
+  #report{display:none;margin-top:8px}
+  #report.show{display:block}
+  .report-head{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+  .report-head h2{margin:0 0 10px;font-size:18px;color:var(--brand-ink)}
+  .report-head .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13px;color:var(--sub)}
+  .report-head .meta b{color:var(--ink)}
+  .verdict{text-align:center;border-radius:14px;padding:18px;margin-bottom:18px;color:#fff}
+  .verdict.pos{background:linear-gradient(135deg,#ef4444,#f59e0b)}
+  .verdict.neg{background:linear-gradient(135deg,#10b981,#059669)}
+  .verdict h2{margin:0 0 4px;font-size:22px}
+  .verdict p{margin:0;font-size:13px;opacity:.95}
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .stat .v{font-size:24px;font-weight:800;color:var(--brand)}
+  .stat .k{font-size:12px;color:var(--sub);margin-top:2px}
+  .chartbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+  .chartbox h3{margin:0 0 10px;font-size:15px}
+  .factor-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .factor-row .name{flex:0 0 110px}
+  .factor-row .track{flex:1;height:16px;background:#eef2f3;border-radius:99px;position:relative;overflow:hidden}
+  .factor-row .track > i{display:block;height:100%;border-radius:99px}
+  .factor-row .norm{position:absolute;top:-3px;width:2px;height:22px;background:#374151}
+  .factor-row .score{flex:0 0 64px;text-align:right;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+  th{background:var(--brand-soft);color:var(--brand-ink)}
+  td.l{text-align:left}
+  .tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700}
+  .tag.ok{background:#d1fae5;color:#065f46}
+  .tag.mid{background:#fef3c7;color:#92400e}
+  .tag.bad{background:#fee2e2;color:#991b1b}
+  .interp{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+  .interp h3{margin:0 0 8px;font-size:15px}
+  .interp ul{margin:6px 0;padding-left:20px}
+  .interp li{margin:4px 0;font-size:13.5px}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin-top:30px}
+  @media(max-width:620px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .q .opts label{min-width:40px}
+    .factor-row .name{flex:0 0 86px;font-size:12px}
+  }
+  @media print{
+    body{background:#fff}
+    header,.disclaimer,.info-card,.progress,.group,.actions,footer{display:none !important}
+    #report{display:block !important}
+    .chartbox,.interp,.report-head,.stat{border-color:#cbd5e1;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>SCL-90 症状自评量表</h1>
+  <p>Symptom Checklist-90 · 90 项症状清单（王征宇 1984 中文修订版）</p>
+  <p>请依据「最近一周」内的真实感受作答 · 适用 16 岁以上人群</p>
+</header>
+
+<div class="wrap">
+  <div class="disclaimer">
+    <b>说明与免责：</b>本工具为<strong>自填式心理症状筛查</strong>，结果仅作初步参考，<u>不能替代专业医学诊断</u>。
+    若结果为筛查阳性，或你正被情绪/睡眠/行为问题困扰，请及时前往精神科或心理咨询机构寻求专业帮助。
+    处于危机中（如有自伤念头）请立即联系当地心理援助热线或急诊。
+  </div>
+
+  <div class="info-card">
+    <h2>基本信息（用于匹配细分常模）</h2>
+    <div class="fields">
+      <label>编号 / 姓名（可选）<input id="f_name" type="text" placeholder="如：匿名001" /></label>
+      <label>性别
+        <select id="f_sex"><option value="">不愿透露</option><option value="男">男</option><option value="女">女</option></select>
+      </label>
+      <label>年龄（周岁）<input id="f_age" type="number" min="6" max="120" placeholder="如：25" /></label>
+    </div>
+  </div>
+
+  <div class="progress">
+    <b id="progText">已答 0 / 90</b>
+    <div class="bar"><i id="progBar"></i></div>
+  </div>
+
+  <div id="quiz"></div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="generate()">生成测评报告</button>
+    <button class="btn btn-ghost" onclick="resetAll()">清空重填</button>
+  </div>
+
+  <div id="report">
+    <div class="report-head" id="reportHead"></div>
+    <div id="verdict" class="verdict"></div>
+    <div class="cards" id="cards"></div>
+
+    <div class="chartbox">
+      <h3>各因子得分 vs 所选常模均值（竖线为常模均值参考线）</h3>
+      <div id="bars"></div>
+    </div>
+
+    <div class="chartbox">
+      <h3>九因子剖面雷达图</h3>
+      <div id="radar" style="text-align:center"></div>
+    </div>
+
+    <div class="interp">
+      <h3>因子维度解读</h3>
+      <ul id="interpList"></ul>
+    </div>
+
+    <div class="chartbox">
+      <h3>常模对照表（所选常模，均值作参考）</h3>
+      <table id="normTable">
+        <thead><tr><th>因子</th><th>您的得分</th><th>常模均值</th><th>判定</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="pdfBtn" onclick="downloadPDF()">下载 PDF 报告</button>
+      <button class="btn btn-ghost" onclick="window.print()">打印 / 另存为 PDF</button>
+      <button class="btn btn-ghost" onclick="resetAll()">重新测评</button>
+    </div>
+  </div>
+
+  <footer>本量表基于公开学术常模构建，仅供学习与自我觉察使用 · 数据仅保存在本机浏览器，不上传任何服务器</footer>
+</div>
+
+<script>
+/* ---------- 题目（王征宇 1984 中文版，题目编号 1-90） ---------- */
+const ITEMS = [
+'头痛','神经过敏，心中不踏实','头脑中有不必要的想法或字句盘旋','头昏或昏倒','对异性的兴趣减退',
+'对旁人责备求全','感到别人能控制您的思想','责怪别人制造麻烦','忘性大','担心自己的衣饰整齐及仪态的端正',
+'容易烦恼和激动','胸痛','害怕空旷的场所或街道','感到自己的精力下降，活动减慢','想结束自己的生命',
+'听到旁人听不到的声音','发抖','感到大多数人都不可信任','胃口不好','容易哭泣',
+'同异性相处时感到害羞不自在','感到受骗，中了圈套或有人想抓住您','无缘无故地突然感到害怕','自己不能控制地大发脾气','怕单独出门',
+'经常责怪自己','腰痛','感到难以完成任务','感到孤独','感到苦闷',
+'过分担忧','对事物不感兴趣','感到害怕','感情容易受到伤害','旁人能知道您的私下想法',
+'感到别人不理解您不同情您','感到人们对您不友好，不喜欢您','做事必须做得很慢以保证做得正确','心跳得很厉害','恶心或胃部不舒服',
+'感到比不上他人','肌肉酸痛','感到有人在监视您谈论您','难以入睡','做事必须反复检查',
+'难以作出决定','怕乘电车、公共汽车、地铁或火车','呼吸有困难','一阵阵发冷或发热','因为感到害怕而避开某些东西、场合或活动',
+'脑子变空了','身体发麻或刺痛','喉咙有梗塞感','感到对前途没有希望','不能集中注意力',
+'感到身体的某一部分软弱无力','感到紧张或容易紧张','感到手或脚发重','想到有关死亡的事','吃得太多',
+'当别人看着您或谈论您时感到不自在','有一些不属于您自己的想法','有想打人或伤害他人的冲动','醒得太早','必须反复洗手、点数目或触摸某些东西',
+'睡得不稳不深','有想摔坏或破坏东西的冲动','有一些别人没有的想法或念头','感到对别人神经过敏','在商店或电影院等人多的地方感到不自在',
+'感到任何事情都很难做','一阵阵恐惧或惊恐','感到在公共场合吃东西很不舒服','经常与人争论','单独一人时神经很紧张',
+'别人对您的成绩没有作出恰当的评价','即使和别人在一起也感到孤单','感到坐立不安心神不宁','感到自己没有什么价值','感到熟悉的东西变成陌生或不像是真的',
+'大叫或摔东西','害怕会在公共场合昏倒','感到别人想占您的便宜','为一些有关"性"的想法而很苦恼','认为应该因为自己的过错而受到惩罚',
+'感到要赶快把事情做完','感到自己的身体有严重问题','从未感到和其他人很亲近','感到自己有罪','感到自己的脑子有毛病'
+];
+
+/* ---------- 因子题项映射（最新常模版，无重叠，覆盖全部 90 题） ---------- */
+const FACTORS = [
+  {key:'躯体化',      items:[1,4,12,27,40,42,48,49,52,53,56,58]},
+  {key:'强迫症状',    items:[3,9,10,28,38,45,46,51,55,65]},
+  {key:'人际关系敏感',items:[6,21,34,36,37,41,61,69,73]},
+  {key:'抑郁',        items:[5,14,15,20,22,26,29,30,31,32,54,71,79]},
+  {key:'焦虑',        items:[2,17,23,33,39,57,72,78,80,86]},
+  {key:'敌对',        items:[11,24,63,67,74,81]},
+  {key:'恐怖',        items:[13,25,47,50,70,75,82]},
+  {key:'偏执',        items:[8,18,43,68,76,83]},
+  {key:'精神病性',    items:[7,16,35,62,77,84,85,87,88,90]}
+];
+const OTHER_ITEMS = [19,44,59,60,64,66,89];
+const OPTS = ['没有','很轻','中等','偏重','严重'];
+
+/* ---------- 三套常模（按年龄匹配） ---------- */
+const NORMS = {
+  teen: {label:'中学生常模（刘恒、张建新，2002，n=2209）',
+    v:{'躯体化':1.58,'强迫症状':2.10,'人际关系敏感':1.82,'抑郁':1.77,'焦虑':1.75,'敌对':1.81,'恐怖':1.53,'偏执':1.74,'精神病性':1.67}},
+  adult:{label:'成人常模（金华等，1986，全国13地区 n=1388）',
+    v:{'躯体化':1.37,'强迫症状':1.62,'人际关系敏感':1.65,'抑郁':1.50,'焦虑':1.39,'敌对':1.46,'恐怖':1.23,'偏执':1.43,'精神病性':1.29}},
+  elder:{label:'老年常模（陈树林等，2003，社区老人）',
+    v:{'躯体化':1.63,'强迫症状':1.78,'人际关系敏感':1.62,'抑郁':1.65,'焦虑':1.52,'敌对':1.50,'恐怖':1.41,'偏执':1.47,'精神病性':1.35}}
+};
+function pickNormKey(age){
+  if(age===null||age===''||isNaN(age)) return 'adult';
+  age=+age;
+  if(age<18) return 'teen';
+  if(age>=60) return 'elder';
+  return 'adult';
+}
+
+/* ---------- 渲染答题区（按因子分组，组内按题号升序） ---------- */
+const quiz = document.getElementById('quiz');
+const groups = FACTORS.map(f => ({name:f.key, items:f.items.slice().sort((a,b)=>a-b)}));
+groups.push({name:'其他（睡眠 / 饮食）', items:OTHER_ITEMS.slice().sort((a,b)=>a-b)});
+
+groups.forEach(g=>{
+  const box = document.createElement('div');
+  box.className='group';
+  box.innerHTML = `<h2>${g.name}<small>共 ${g.items.length} 题</small></h2>`;
+  g.items.forEach(n=>{
+    const optsHtml = OPTS.map((o,i)=>`
+      <label><input type="radio" name="q${n}" value="${i+1}"><span>${i+1}</span>${o}</label>`).join('');
+    box.innerHTML += `<div class="q"><div class="no">${n}.</div>
+      <div class="txt">${ITEMS[n-1]}</div><div class="opts">${optsHtml}</div></div>`;
+  });
+  quiz.appendChild(box);
+});
+
+/* ---------- 基本信息 + 进度 本地存储 ---------- */
+const KEY='scl90_state';
+function save(){
+  const a={};
+  for(let n=1;n<=90;n++){const el=document.querySelector(`input[name=q${n}]:checked`);if(el)a[n]=+el.value;}
+  const info={name:f_name.value, sex:f_sex.value, age:f_age.value};
+  localStorage.setItem(KEY,JSON.stringify({a,info}));
+  updateProgress();
+}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY)||'{}');
+    const a=s.a||{};
+    Object.entries(a).forEach(([n,v])=>{const el=document.querySelector(`input[name=q${n}][value="${v}"]`);if(el)el.checked=true;});
+    if(s.info){ if(s.info.name!==undefined)f_name.value=s.info.name; if(s.info.sex!==undefined)f_sex.value=s.info.sex; if(s.info.age!==undefined)f_age.value=s.info.age; }
+  }catch(e){}
+  updateProgress();
+}
+function updateProgress(){
+  let c=0;for(let n=1;n<=90;n++)if(document.querySelector(`input[name=q${n}]:checked`))c++;
+  document.getElementById('progText').textContent=`已答 ${c} / 90`;
+  document.getElementById('progBar').style.width=(c/90*100)+'%';
+}
+document.getElementById('quiz').addEventListener('change',save);
+[f_name,f_sex,f_age].forEach(el=>el.addEventListener('input',save));
+
+/* ---------- 计分与报告 ---------- */
+function getAnswers(){
+  const a=[];for(let n=1;n<=90;n++){const el=document.querySelector(`input[name=q${n}]:checked`);a[n]=el?+el.value:null;}
+  return a;
+}
+function pad(n){return n<10?'0'+n:''+n;}
+
+function generate(){
+  const a=getAnswers();
+  const unanswered=[];for(let n=1;n<=90;n++)if(a[n]===null)unanswered.push(n);
+  if(unanswered.length){
+    alert(`还有 ${unanswered.length} 题未作答（如第 ${unanswered.slice(0,8).join('、')}${unanswered.length>8?' 等':''} 题）。\n请全部作答后再生成报告。`);
+    return;
+  }
+  const total=a.reduce((s,v)=>s+v,0);
+  const positive=a.filter(v=>v>=2).length;
+  const negative=a.filter(v=>v===1).length;
+  const psdi= positive? ((total-negative)/positive):0;
+  const gsi=(total/90).toFixed(2);
+
+  const factorScores=FACTORS.map(f=>{
+    const sum=f.items.reduce((s,n)=>s+a[n],0);
+    return {key:f.key, score:+(sum/f.items.length).toFixed(2), raw:sum, count:f.items.length};
+  });
+
+  const posFlag = total>160 || positive>43 || factorScores.some(f=>f.score>2);
+
+  /* 基本信息 & 常模 */
+  const name=f_name.value.trim()||'匿名';
+  const sex=f_sex.value||'不愿透露';
+  const age=f_age.value;
+  const nk=pickNormKey(age);
+  const norm=NORMS[nk].v;
+  const normLabel=NORMS[nk].label;
+  let ageGroup = nk==='teen'?'中学生（<18）':nk==='elder'?'老年人（≥60）':'成年人（18–59）';
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  document.getElementById('reportHead').innerHTML=`
+    <h2>SCL-90 心理健康测评报告</h2>
+    <div class="meta">
+      <span>编号/姓名：<b>${name}</b></span>
+      <span>性别：<b>${sex}</b></span>
+      <span>年龄：<b>${age?age+' 岁':'未填'}</b></span>
+      <span>人群分组：<b>${ageGroup}</b></span>
+      <span>测评时间：<b>${dateStr}</b></span>
+      <span>参照常模：<b>${normLabel}</b></span>
+    </div>`;
+
+  document.getElementById('cards').innerHTML=`
+    <div class="stat"><div class="v">${total}</div><div class="k">总分（90-450）</div></div>
+    <div class="stat"><div class="v">${gsi}</div><div class="k">总均分</div></div>
+    <div class="stat"><div class="v">${positive}</div><div class="k">阳性项目数（≥43 临界）</div></div>
+    <div class="stat"><div class="v">${negative}</div><div class="k">阴性项目数</div></div>
+    <div class="stat"><div class="v">${psdi.toFixed(2)}</div><div class="k">阳性症状均分</div></div>`;
+
+  const v=document.getElementById('verdict');
+  if(posFlag){
+    v.className='verdict pos';
+    v.innerHTML='<h2>筛查阳性</h2><p>总分、阳性项目数或某因子分达到参考临界值。这提示可能存在值得关注的心理症状，建议进一步评估。</p>';
+  }else{
+    v.className='verdict neg';
+    v.innerHTML='<h2>筛查未达阳性临界</h2><p>本次自评未触及常用筛查临界值，但仅供参考。若仍有主观困扰，仍建议咨询专业人士。</p>';
+  }
+
+  drawBars(factorScores, norm);
+  drawRadar(factorScores, norm);
+  drawInterp(factorScores, total, positive, norm);
+  drawNormTable(factorScores, norm);
+
+  document.getElementById('report').classList.add('show');
+  document.getElementById('report').scrollIntoView({behavior:'smooth'});
+}
+
+function colorFor(score){
+  if(score<2) return 'var(--ok)';
+  if(score<3) return 'var(--warn)';
+  return 'var(--danger)';
+}
+function drawBars(fs, norm){
+  const max=5, el=document.getElementById('bars');let html='';
+  fs.forEach(f=>{
+    const pct=(f.score/max*100).toFixed(1);
+    const normPct=(norm[f.key]/max*100).toFixed(1);
+    html+=`<div class="factor-row">
+      <div class="name">${f.key}</div>
+      <div class="track"><i style="width:${pct}%;background:${colorFor(f.score)}"></i>
+        <div class="norm" style="left:${normPct}%"></div></div>
+      <div class="score" style="color:${colorFor(f.score)}">${f.score.toFixed(2)}</div></div>`;
+  });
+  el.innerHTML=html;
+}
+function drawRadar(fs, norm){
+  const cx=200,cy=200,R=150,N=fs.length,max=5;
+  const ang=i=>(-90+i*360/N)*Math.PI/180;
+  const pt=(r,i)=>[cx+r*Math.cos(ang(i)), cy+r*Math.sin(ang(i))];
+  let grid='';
+  for(let g=1;g<=5;g++){
+    const pts=fs.map((_,i)=>pt(R*g/5,i).join(',')).join(' ');
+    grid+=`<polygon points="${pts}" fill="none" stroke="#e2e8f0" stroke-width="1"/>`;
+  }
+  const axis=fs.map((f,i)=>{
+    const [x,y]=pt(R+22,i);
+    const [x2,y2]=pt(R+4,i);
+    return `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#e2e8f0"/>
+            <text x="${x}" y="${y}" font-size="11" text-anchor="middle" fill="#334155">${f.key}</text>`;
+  }).join('');
+  const dataPts=fs.map((f,i)=>pt(R*f.score/max,i).join(',')).join(' ');
+  const normPts=fs.map((f,i)=>pt(R*norm[f.key]/max,i).join(',')).join(' ');
+  const svg=`<svg width="420" height="420" viewBox="0 0 420 420">
+    ${grid}${axis}
+    <polygon points="${normPts}" fill="none" stroke="#94a3b8" stroke-dasharray="4 3" stroke-width="1.5"/>
+    <polygon points="${dataPts}" fill="rgba(14,165,233,.22)" stroke="#0ea5e9" stroke-width="2"/>
+    ${fs.map((f,i)=>{const [x,y]=pt(R*f.score/max,i);return `<circle cx="${x}" cy="${y}" r="3" fill="#0ea5e9"/>`}).join('')}
+  </svg>
+  <p style="font-size:12px;color:var(--sub);margin:4px">实线=您的得分，虚线=所选常模均值轮廓</p>`;
+  document.getElementById('radar').innerHTML=svg;
+}
+function drawInterp(fs, total, positive, norm){
+  const ul=document.getElementById('interpList');let html='';
+  const focus=fs.filter(f=>f.score>2).sort((a,b)=>b.score-a.score);
+  if(focus.length){
+    html+=`<li><b>重点关注维度：</b>${focus.map(f=>`${f.key}（${f.score.toFixed(2)}）`).join('、')}。这些维度得分超过 2 分，提示相应症状较为明显。</li>`;
+  }else{
+    html+=`<li>各因子得分均未超过 2 分临界，未见明显突出的症状维度。</li>`;
+  }
+  fs.forEach(f=>{
+    const diff=(f.score-norm[f.key]);
+    const cmp = diff>0.3?`（高于常模 ${diff.toFixed(2)}）`:diff<-0.3?`（低于常模 ${Math.abs(diff).toFixed(2)}）`:'（与常模接近）';
+    let lvl,desc;
+    if(f.score<2){lvl='正常范围';desc='该维度未见明显症状。';}
+    else if(f.score<3){lvl='轻度~中度';desc='该维度有一些症状表现，建议关注与自我调节。';}
+    else{lvl='中等以上';desc='该维度症状已达中等以上严重程度，建议尽快寻求专业评估。';}
+    html+=`<li><b>${f.key}（${f.score.toFixed(2)}，常模 ${norm[f.key]} ${cmp}）：</b>${lvl} — ${desc}</li>`;
+  });
+  ul.innerHTML=html;
+}
+function drawNormTable(fs, norm){
+  const tb=document.querySelector('#normTable tbody');let html='';
+  fs.forEach(f=>{
+    let tag;
+    if(f.score<2) tag='<span class="tag ok">正常</span>';
+    else if(f.score<3) tag='<span class="tag mid">偏高</span>';
+    else tag='<span class="tag bad">明显</span>';
+    html+=`<tr><td class="l">${f.key}</td><td><b>${f.score.toFixed(2)}</b></td><td>${norm[f.key]}</td><td>${tag}</td></tr>`;
+  });
+  tb.innerHTML=html;
+}
+
+/* ---------- 导出 PDF ---------- */
+async function downloadPDF(){
+  const btn=document.getElementById('pdfBtn'); const old=btn.textContent; btn.textContent='生成中…';
+  const report=document.getElementById('report');
+  try{
+    if(typeof html2canvas==='undefined'||!window.jspdf){ throw new Error('no-lib'); }
+    const canvas=await html2canvas(report,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF('p','mm','a4');
+    const pw=210, ph=297;
+    const iw=pw, ih=canvas.height*pw/canvas.width;
+    let pos=0, left=ih;
+    while(left>0){
+      pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,pos,iw,ih);
+      left-=ph; pos-=ph;
+      if(left>0) pdf.addPage();
+    }
+    const d=new Date();
+    const nm=(f_name.value.trim()||'匿名')+'_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+    pdf.save('SCL90测评报告_'+nm+'.pdf');
+  }catch(e){
+    alert('当前环境无法一键导出 PDF（可能未联网）。已打开打印窗口，请在打印对话框中选择「另存为 PDF」即可。');
+    window.print();
+  }finally{ btn.textContent=old; }
+}
+
+function resetAll(){
+  if(!confirm('确定清空所有作答与基本信息并重新开始吗？'))return;
+  for(let n=1;n<=90;n++){document.querySelectorAll(`input[name=q${n}]`).forEach(e=>e.checked=false);}
+  f_name.value=''; f_sex.value=''; f_age.value='';
+  localStorage.removeItem(KEY);
+  document.getElementById('report').classList.remove('show');
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+load();
+</script>
+</body>
+</html>
